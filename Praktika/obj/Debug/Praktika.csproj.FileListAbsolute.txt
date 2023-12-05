@@ -37,3 +37,4 @@ C:\Users\Vlad\Desktop\Praktika\Praktika\obj\Debug\Praktika.csproj.CopyComplete
 C:\Users\Vlad\Desktop\Praktika\Praktika\obj\Debug\Praktika.exe
 C:\Users\Vlad\Desktop\Praktika\Praktika\obj\Debug\Praktika.pdb
 D:\ycheba\Praktika\Praktika\Praktika\obj\Debug\Praktika.Login.resources
+D:\ycheba\Praktika\Praktika\Praktika\obj\Debug\Praktika.sourcelink.json

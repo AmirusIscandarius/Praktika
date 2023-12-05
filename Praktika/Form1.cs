@@ -29,7 +29,7 @@ namespace Praktika
             SQLiteConnection connection = new SQLiteConnection(db.connection);
 
 
-            string query = @"SELECT * FROM Science";
+            string query = @"SELECT * FROM Scientists";
 
             SQLiteCommand command = new SQLiteCommand(query, connection);
             SQLiteDataAdapter adapter = new SQLiteDataAdapter(command);
@@ -40,16 +40,12 @@ namespace Praktika
 
             dataGridView1.DataSource = datatable;
 
-            dataGridView1.Columns["NameOfSientist"].HeaderText = "Имя учёного";
+            dataGridView1.Columns["NameOfScientists"].HeaderText = "Имя учёного";
             dataGridView1.Columns["Organization"].HeaderText = "Организация";
             dataGridView1.Columns["Country"].HeaderText = "Страна";
-            dataGridView1.Columns["ScienceDegree"].HeaderText = "Учёная степень";
-            dataGridView1.Columns["NameOfConference"].HeaderText = "Название конференции";
-            dataGridView1.Columns["Place"].HeaderText = "Место проведения";
-            dataGridView1.Columns["DateOfPublication"].HeaderText = "Дата";
-            dataGridView1.Columns["Type"].HeaderText = "Тип участия";
-            dataGridView1.Columns["Theme"].HeaderText = "Тема доклада";
-            dataGridView1.Columns["Publication"].HeaderText = "Публикация";
+            dataGridView1.Columns["AcademDegree"].HeaderText = "Учёная степень";
+            dataGridView1.Columns["ScientistId"].Visible = false;
+
 
             dataGridView1.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
             dataGridView1.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
@@ -70,100 +66,215 @@ namespace Praktika
 
             connection.Open();
 
-            string query = @"SELECT NameOfSientist, COUNT(*) AS num_publications FROM Science 
-                             WHERE strftime('%Y', DateOfPublication) = '2023' GROUP BY NameOfSientist;";
+            string query = @"SELECT Scientists.NameOfScientists AS NameOfScientists,
+                            COUNT(Participation.PublicationStatus) as PublicationStatus
+FROM Scientists
+JOIN Participation ON Scientists.ScientistId = Participation.ScientistId
+JOIN Conferences ON Participation.ConferenceId = Conferences.ConferenceId
+WHERE Participation.PublicationStatus = 'Да'
+  AND strftime('%Y', Conferences.DateOfConference) = '2022'
+GROUP BY Scientists.NameOfScientists;";
 
             using (SQLiteCommand command = new SQLiteCommand(query, connection))
             {
-                using (SQLiteDataReader reader = command.ExecuteReader())
+                using (SQLiteDataAdapter adapter = new SQLiteDataAdapter(command))
                 {
-                    while (reader.Read())
-                    {
-                        string Name = Convert.ToString(reader["NameOfSientist"]);
-                        string Num = Convert.ToString(reader["num_publications"]);
+                    DataTable dataTable = new DataTable();
+                    adapter.Fill(dataTable);
 
-                        label1.Text += $"\n{Name}:{Num}";
+                    if (dataTable.Rows.Count > 0)
+                    {
+                       string scientistName = dataTable.Rows[0]["NameOfScientists"].ToString();
+                       string publicationCount = dataTable.Rows[0]["PublicationStatus"].ToString();
+ 
+                       label1.Text += $"\n{scientistName}:{publicationCount}";
                     }
                 }
             }
         }
+            private void button3_Click(object sender, EventArgs e)
+            {
+                db = new DB();
+                db.getConnection();
 
-        private void button3_Click(object sender, EventArgs e)
+                SQLiteConnection connection = new SQLiteConnection(db.connection);
+
+                connection.Open();
+
+                string query = @"SELECT
+    Conferences.NameOfConference AS NameOfConference
+FROM
+    Conferences
+LEFT JOIN
+    Participation ON Conferences.ConferenceId = Participation.ConferenceId
+WHERE
+    Participation.PublicationStatus = 'Нет';";
+
+                using (SQLiteCommand command = new SQLiteCommand(query, connection))
+                {
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string Name = Convert.ToString(reader["NameOfConference"]);
+
+                            label2.Text += $"\n{Name}";
+                        }
+                    }
+                }
+            }
+
+            private void button4_Click(object sender, EventArgs e)
+            {
+                db = new DB();
+                db.getConnection();
+
+                SQLiteConnection connection = new SQLiteConnection(db.connection);
+
+                connection.Open();
+
+                string query = @"SELECT
+    Conferences.NameOfConference AS NameOfConference,
+    COUNT(Scientists.ScientistId) AS DoctorCount
+FROM
+    Conferences
+JOIN
+    Participation ON Conferences.ConferenceId = Participation.ConferenceId
+JOIN
+    Scientists ON Participation.ScientistId = Scientists.ScientistId
+WHERE
+    Scientists.AcademDegree= 'Доктор-наук'
+GROUP BY
+    Conferences.ConferenceId
+ORDER BY
+    DoctorCount DESC
+LIMIT 1;;";
+
+                using (SQLiteCommand command = new SQLiteCommand(query, connection))
+                {
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string Name = Convert.ToString(reader["NameOfConference"]);
+
+                            label3.Text += $"{Name}";
+                        }
+                    }
+                }
+            }
+
+            private void button5_Click(object sender, EventArgs e)
+            {
+                db = new DB();
+                db.getConnection();
+
+                SQLiteConnection connection = new SQLiteConnection(db.connection);
+
+                connection.Open();
+
+                string query = @"SELECT
+    Conferences.NameOfConference AS NameOfConference,
+    COUNT(DISTINCT Scientists.Country) AS CountryCount
+FROM
+    Conferences
+JOIN
+    Participation ON Conferences.ConferenceId = Participation.ConferenceId
+JOIN
+    Scientists ON Participation.ScientistId = Scientists.ScientistId
+GROUP BY
+    Conferences.ConferenceId
+ORDER BY
+    NameOfConference
+LIMIT 1;";
+
+                using (SQLiteCommand command = new SQLiteCommand(query, connection))
+                {
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string Name = Convert.ToString(reader["NameOfConference"]);
+                            string Num = Convert.ToString(reader["CountryCount"]);
+
+                            label4.Text += $"\n{Name}:{Num}";
+                        }
+                    }
+                }
+            }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+
+            db = new DB();
+            db.getConnection();
+
+            SQLiteConnection connection = new SQLiteConnection(db.connection);
+
+
+            string query = @"SELECT * FROM Conferences";
+
+            SQLiteCommand command = new SQLiteCommand(query, connection);
+            SQLiteDataAdapter adapter = new SQLiteDataAdapter(command);
+
+            DataTable datatable = new DataTable();
+
+            adapter.Fill(datatable);
+
+            dataGridView2.DataSource = datatable;
+
+            dataGridView2.Columns["NameOfConference"].HeaderText = "Название конфиренции";
+            dataGridView2.Columns["Location"].HeaderText = "Место провидения";
+            dataGridView2.Columns["DateOfConference"].HeaderText = "Дата";
+            dataGridView2.Columns["ConferenceId"].Visible = false;
+
+
+            dataGridView2.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            dataGridView2.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+            dataGridView2.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dataGridView2.AllowUserToAddRows = false;
+            dataGridView2.RowHeadersVisible = false;
+            dataGridView2.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridView2.MultiSelect = false;
+            dataGridView2.ReadOnly = true;
+        }
+
+        private void button7_Click(object sender, EventArgs e)
         {
             db = new DB();
             db.getConnection();
 
             SQLiteConnection connection = new SQLiteConnection(db.connection);
 
-            connection.Open();
 
-            string query = @"SELECT NameOfConference FROM Science WHERE Publication = 'Нет';";
+            string query = @"SELECT * FROM Participation";
 
-            using (SQLiteCommand command = new SQLiteCommand(query, connection))
-            {
-                using (SQLiteDataReader reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        string Name = Convert.ToString(reader["NameOfConference"]);
+            SQLiteCommand command = new SQLiteCommand(query, connection);
+            SQLiteDataAdapter adapter = new SQLiteDataAdapter(command);
 
-                        label2.Text += $"\n{Name}";
-                    }
-                }
-            }
-        }
+            DataTable datatable = new DataTable();
 
-        private void button4_Click(object sender, EventArgs e)
-        {
-            db = new DB();
-            db.getConnection();
+            adapter.Fill(datatable);
 
-            SQLiteConnection connection = new SQLiteConnection(db.connection);
+            dataGridView3.DataSource = datatable;
 
-            connection.Open();
+            dataGridView3.Columns["ParticipationType"].HeaderText = "Имя учёного";
+            dataGridView3.Columns["PresentationTheme"].HeaderText = "Организация";
+            dataGridView3.Columns["PublicationStatus"].HeaderText = "Страна";
+            dataGridView3.Columns["DateOfConference"].HeaderText = "Учёная степень";
+            dataGridView3.Columns["ParticipationId"].Visible = false;
+            dataGridView3.Columns["ScientistId"].Visible = false;
+            dataGridView3.Columns["ConferenceId"].Visible = false;
 
-            string query = @"SELECT NameOfConference FROM Science WHERE ScienceDegree = 'Доктор - наук'
-                             GROUP BY NameOfConference ORDER BY COUNT(*) DESC LIMIT 1;";
 
-            using (SQLiteCommand command = new SQLiteCommand(query, connection))
-            {
-                using (SQLiteDataReader reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        string Name = Convert.ToString(reader["NameOfConference"]);
-
-                        label3.Text += $"{Name}";
-                    }
-                }
-            }
-        }
-
-        private void button5_Click(object sender, EventArgs e)
-        {
-            db = new DB();
-            db.getConnection();
-
-            SQLiteConnection connection = new SQLiteConnection(db.connection);
-
-            connection.Open();
-
-            string query = @"SELECT NameOfConference, COUNT(DISTINCT Country) AS num_countries
-                             FROM Science GROUP BY NameOfConference;";
-
-            using (SQLiteCommand command = new SQLiteCommand(query, connection))
-            {
-                using (SQLiteDataReader reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        string Name = Convert.ToString(reader["NameOfConference"]);
-                        string Num = Convert.ToString(reader["num_countries"]);
-
-                        label4.Text += $"\n{Name}:{Num}";
-                    }
-                }
-            }
+            dataGridView3.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            dataGridView3.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+            dataGridView3.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dataGridView3.AllowUserToAddRows = false;
+            dataGridView3.RowHeadersVisible = false;
+            dataGridView3.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dataGridView3.MultiSelect = false;
+            dataGridView3.ReadOnly = true;
         }
     }
 }
